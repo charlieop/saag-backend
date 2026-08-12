@@ -7,10 +7,9 @@ from django.utils import timezone
 
 
 DEPARTMENTS = [
-    ("LAW", "法务部"),
+    ("FAL", "财法部"),
     ("IT", "IT部"),
     ("LIA", "外联部"),
-    ("FIN", "财务部"),
     ("PR", "宣传部"),
     ("HR", "人事部"),
     ("CM", "行研部"),
@@ -62,10 +61,13 @@ class Applicant(models.Model):
     grade = models.CharField(max_length=6, choices=YEAR_IN_SCHOOL_CHOICES, verbose_name="年级", blank=False)
     sex = models.CharField(max_length=1, choices=SEX, verbose_name="性别", default="O")
     wechat = models.CharField(max_length=30, verbose_name="微信号", blank=False)
+    region = models.CharField(max_length=30, verbose_name="所在地区", blank=True, null=True)
     first_choice = models.CharField(max_length=3, choices=DEPARTMENTS, verbose_name="第一志愿", blank=False)
     second_choice = models.CharField(max_length=3, choices=DEPARTMENTS, verbose_name="第二志愿", blank=True, null=True)
     third_choice = models.CharField(max_length=3, choices=DEPARTMENTS, verbose_name="第三志愿", blank=True, null=True)
     preferred_subject = models.CharField(max_length=4, choices=SUBJECTS, verbose_name="偏好科目", blank=True, null=True)
+    has_experience = models.CharField(max_length=1, choices=[('Y', '是'), ('N', '否')], verbose_name="是否有志愿/教学/支教经历", default='N')
+    experience_detail = models.TextField(verbose_name="相关经历说明", blank=True, null=True)
     self_intro = models.TextField(verbose_name="简述", blank=False)
     disposable_time = models.IntegerField(choices=[(i, i) for i in range(1, 6)], blank=False, verbose_name="每周可投入小时")
     src = models.CharField(max_length=30, verbose_name="来源", blank=True, null=True)
@@ -167,7 +169,7 @@ class ApplicationStatus(models.Model):
             return False
         self.writing_task_ddl = ApplicationStatus.calculate_ddl()
         self.save()
-        res = send_email_with_no_reply(self.applicant.email, "SAGA星光·第五期 -- 笔试邀请",
+        res = send_email_with_no_reply(self.applicant.email, "SAGA星光·第七期 -- 笔试邀请",
                                  compose_writing_task_email(self.applicant.id, self.applicant.name,
                                                             self.handle_by, timezone.localtime(self.writing_task_ddl)))
         if res:
@@ -181,9 +183,11 @@ class ApplicationStatus(models.Model):
             return False
         if self.interview_time is None or self.interviewer is None:
             return False
-        res = send_email_with_no_reply(self.applicant.email, "SAGA星光·第五期 -- 面试邀请",
+        interview_reply_ddl = (timezone.now() + timedelta(hours=24)).replace(hour=23, minute=59, second=59, microsecond=0)
+        res = send_email_with_no_reply(self.applicant.email, "SAGA星光·第七期 -- 面试邀请",
                                  compose_interview_email(self.applicant.name, self.handle_by,
-                                                         timezone.localtime(self.interview_time), self.interviewer.meeting_link))
+                                                         timezone.localtime(self.interview_time), self.interviewer.meeting_link,
+                                                         timezone.localtime(interview_reply_ddl)))
         if res:
             self.status = "INTERVIEW_EMAIL_SENT"
             self.save()
@@ -194,11 +198,13 @@ class ApplicationStatus(models.Model):
         if self.status not in ["INTERNAL_ACCEPTED", "INTERNAL_REJECTED"]:
             return False
         if self.status == "INTERNAL_ACCEPTED":
-            res = send_email_with_HR(self.applicant.email, "SAGA星光·第五期 -- 录取通知",
-                                     compose_accept_email(self.applicant.name, self.handle_by))
+            offer_reply_ddl = (timezone.now() + timedelta(days=3)).replace(hour=23, minute=59, second=59, microsecond=0)
+            res = send_offer_email_with_hr(self.applicant.email, "SAGA星光·第七期 -- 录取通知",
+                                           compose_accept_email(self.applicant.name, self.handle_by,
+                                                                timezone.localtime(offer_reply_ddl)))
         else:
-            res = send_email_with_HR(self.applicant.email, "SAGA星光·第五期 -- 拒绝通知",
-                                     compose_reject_email(self.applicant.name, self.handle_by))
+            res = send_reject_email_with_hr(self.applicant.email, "SAGA星光·第七期 -- 拒绝通知",
+                                            compose_reject_email(self.applicant.name, self.handle_by))
         if res:
             if self.status == "INTERNAL_ACCEPTED":
                 self.status = "ACCEPTED"

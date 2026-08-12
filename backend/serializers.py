@@ -7,9 +7,9 @@ class CreateApplicantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Applicant
         fields = ["name", "email", "phone", "school",
-                  "major", "grade", "sex", "wechat",
+                  "major", "grade", "sex", "wechat", "region",
                   "first_choice", "second_choice", "third_choice",
-                  "preferred_subject", "self_intro", "disposable_time",
+                  "self_intro", "disposable_time",
                   "src",]        
 
 

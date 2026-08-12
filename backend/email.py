@@ -1,3 +1,4 @@
+import os
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -7,8 +8,7 @@ code_to_dept = {
     "IT": "IT部",
     "HR": "人事部",
     "PR": "宣传部",
-    "FIN": "财务部",
-    "LAW": "法务部",
+    "FAL": "财法部",
     "LIA": "外联部",
 }
 dept_to_file_url = {
@@ -17,8 +17,7 @@ dept_to_file_url = {
     "IT": "https://lcny1jsoyn29.feishu.cn/drive/folder/Fp0bfAOvOlPuQJdObPnc4iiWnih",
     "HR": "https://lcny1jsoyn29.feishu.cn/drive/folder/Pgisffl4ClzunkdWLJIc7xeDnSe",
     "PR": "https://lcny1jsoyn29.feishu.cn/drive/folder/VTxGf4cj9lsRo2dnAYTcaKkFniA",
-    "FIN": "https://lcny1jsoyn29.feishu.cn/drive/folder/UwbCfDBFolKepHdWJY0couAfnQh",
-    "LAW": "https://lcny1jsoyn29.feishu.cn/drive/folder/HQmgf3V9OlGovEdbjXtc4v5bndb",
+    "FAL": "https://lcny1jsoyn29.feishu.cn/drive/folder/UwbCfDBFolKepHdWJY0couAfnQh",
     "LIA": "https://lcny1jsoyn29.feishu.cn/drive/folder/S6dtfSEmxlNl1edqe93czW4Hn14",
 }
 dept_to_eng = {
@@ -27,8 +26,7 @@ dept_to_eng = {
     "IT": "IT",
     "HR": "HR",
     "PR": "Publicity",
-    "FIN": "Finance",
-    "LAW": "Legal",
+    "FAL": "Finance-and-Legal",
     "LIA": "Liaison",
 }
 
@@ -284,7 +282,7 @@ def compose_writing_task_email(id, name, dept, ddl):
           <div class="content">
 
             <!-- START CENTERED WHITE CONTAINER -->
-            <span class="preheader">SAGA星光·第五期 - 笔试邀请</span>
+            <span class="preheader">SAGA星光·第七期 - 笔试邀请</span>
             <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="main">
 
               <!-- START MAIN CONTENT AREA -->
@@ -367,10 +365,10 @@ def send_email_with_no_reply(to, subject, content) -> bool:
         sender = "no-reply@saga-xingguang.com"
         server = smtplib.SMTP('smtp.feishu.cn', 587)
         server.starttls()
-        server.login(sender, "PASSWORDHERE")
+        server.login(sender, os.environ.get("SAGA_NO_REPLY_EMAIL_PASSWORD", ""))
         
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = "【SAGA】2024-2025年度志愿者招募笔试邀请函"
+        msg["Subject"] = "【SAGA】2026-2027年度志愿者招募笔试邀请函"
         msg["From"] = sender
         msg["To"] = to
         msg["Reply-To"] = "support@saga-xingguang.com"
@@ -390,7 +388,7 @@ def send_email_with_no_reply(to, subject, content) -> bool:
         return False
 
 # 面试邀请  
-def compose_interview_email(id, name, dept, time,link):
+def compose_interview_email(name, dept, time, link, interview_reply_time_ddl):
     content = f"""
   <html>
   <head>
@@ -618,7 +616,7 @@ def compose_interview_email(id, name, dept, time,link):
           <div class="content">
 
             <!-- START CENTERED WHITE CONTAINER -->
-            <span class="preheader">SAGA星光·第五期 - 面试邀请</span>
+            <span class="preheader">SAGA星光·第七期 - 面试邀请</span>
             <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="main">
 
               <!-- START MAIN CONTENT AREA -->
@@ -648,7 +646,7 @@ def compose_interview_email(id, name, dept, time,link):
                     <li>您可以提前浏览SAGA公众号进行更多了解。（下附二维码）</li>
                   </ul>
                   <div class="pic-QR">
-                    <img src="二维码.png" alt="QR code">
+                    <img src="http://saga-xingguang.com/static/public/imgs/qrCode.jpg" alt="微信公众号二维码">
                   </div>
 
                   <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="btn btn-primary" >
@@ -674,7 +672,7 @@ def compose_interview_email(id, name, dept, time,link):
                     <p>顺颂，<br>夏祺</p>
                   </div>
                   <div class="signature-thin">
-                    <p>志行会SAGA星光项目组·{{code_to_dept[dept]}}敬上</p>
+                    <p>志行会SAGA星光项目组·{code_to_dept[dept]}敬上</p>
                     <p>---SAGA星光团队 </p>
                   </div>
                   
@@ -720,10 +718,11 @@ def send_interview_email_with_support(to, subject, content) -> bool:
         sender = "support@saga-xingguang.com"
         server = smtplib.SMTP('smtp.feishu.cn', 587)
         server.starttls()
-        server.login(sender, "PASSWORD_HERE")
+        # support@saga-xingguang.com 与 no-reply 共用同一个密码
+        server.login(sender, os.environ.get("SAGA_NO_REPLY_EMAIL_PASSWORD", ""))
         
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = "【SAGA】2024-2025年度志愿者招募面试邀请函"
+        msg["Subject"] = "【SAGA】2026-2027年度志愿者招募面试邀请函"
         msg["From"] = sender
         msg["To"] = to
         msg["Reply-To"] = "support@saga-xingguang.com"
@@ -743,7 +742,7 @@ def send_interview_email_with_support(to, subject, content) -> bool:
         return False
 
 # 发送offer
-def compose_accept_email(id, name, dept, offer_reply_ddl):
+def compose_accept_email(name, dept, offer_reply_ddl):
     eng=dept_to_eng.get(dept)
     content = f"""
 <html>
@@ -971,7 +970,7 @@ def compose_accept_email(id, name, dept, offer_reply_ddl):
         <td>&nbsp;</td>
         <td class="container">
           <div class="content">
-            <span class="preheader">SAGA星光·第五期 - 录取通知</span>
+            <span class="preheader">SAGA星光·第七期 - 录取通知</span>
             <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="main">
 
               <!-- START MAIN CONTENT AREA -->
@@ -982,7 +981,7 @@ def compose_accept_email(id, name, dept, offer_reply_ddl):
                   <p>感谢您参加志行会星光线上课堂项目组的招募，鉴于您对公益的热情与您在面试中出众的表现，星光项目组诚挚邀请您成为我们的一员，与所有BTPer一起为我们共同的公益梦想努力。</p> 
                   
                   <p>您的具体职位是<span style="font-weight: bold;">{code_to_dept[dept]}成员</span>。</p>
-                  <p>请扫描<a href="https://lcny1jsoyn29.feishu.cn/wiki/E0BmwziX0inqrPkrjjYc5JvjnXc";>此链接</a>中的二维码，加入到SAGA的飞书团队及微信群，SAGA所有数据都储存在飞书内，主要工作也将在飞书开展，<span class="highlight">请务必保证加入以免消息遗漏</span>。</p>
+                  <p>请扫描<a href="https://lcny1jsoyn29.feishu.cn/wiki/E0BmwziX0inqrPkrjjYc5JvjnXc">此链接</a>中的二维码，加入到SAGA的飞书团队及微信群，SAGA所有数据都储存在飞书内，主要工作也将在飞书开展，<span class="highlight">请务必保证加入以免消息遗漏</span>。</p>
     
                   <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="btn btn-primary" >
                     <tbody>
@@ -1008,10 +1007,10 @@ def compose_accept_email(id, name, dept, offer_reply_ddl):
                   </div><br><hr>
                   <p>Dear candidate,</p>
                   <p>Thank you for participating in the recruitment of BTP-SAGA. Due to your enthusiasm for public welfare and outstanding performance during the interview, we are glad to offer you as a member of BTP-SAGA. We hope that you can strive after our mutual public welfare dreams with all BTPers!</p>
-                  <p>Your position is a member of <span style="font-weight: bold;">{code_to_dept[dept]} Department</p> 
+                  <p>Your position is a member of <span style="font-weight: bold;">{code_to_dept[dept]} Department</span></p> 
                   
                   <p>Please scan the <a href="https://lcny1jsoyn29.feishu.cn/wiki/E0BmwziX0inqrPkrjjYc5JvjnXc">QR codes</a> to enter our Lark Team and WeChat group. All documents of BTP-SAGA are saved in Lark for your reference, and we will carry out our main tasks through it as well. Please join them once you decide to accept the offer. </p>
-                  <p>Please reply to this email as soon as possible to confirm your acceptanc. After you accept the offer, we will notify you through Lark for further arrangement. Kindly note that if we do not receive your reply before <span class="highlight-thin">{offer_reply_ddl}</span>, we will assume that you have automatically given up the position.</p>
+                  <p>Please reply to this email as soon as possible to confirm your acceptance. After you accept the offer, we will notify you through Lark for further arrangement. Kindly note that if we do not receive your reply before <span class="highlight-thin">{offer_reply_ddl}</span>, we will assume that you have automatically given up the position.</p>
 
                   <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="btn btn-primary" >
                     <tbody>
@@ -1070,10 +1069,10 @@ def send_offer_email_with_hr(to, subject, content) -> bool:
         sender = "human-resource@saga-xingguang.com"
         server = smtplib.SMTP('smtp.feishu.cn', 587)
         server.starttls()
-        server.login(sender, "PASSWORD_HERE")
+        server.login(sender, os.environ.get("SAGA_HR_EMAIL_PASSWORD", ""))
         
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = "【SAGA】2024-2025年度志愿者招募结果"
+        msg["Subject"] = "【SAGA】2026-2027年度志愿者招募结果"
         msg["From"] = sender
         msg["To"] = to
         msg["Reply-To"] = "human-resource@saga-xingguang.com"
@@ -1093,7 +1092,7 @@ def send_offer_email_with_hr(to, subject, content) -> bool:
         return False
 
 # reject
-def compose_reject_email(id, name, dept):
+def compose_reject_email(name, dept):
     eng=dept_to_eng.get(dept)
     content = f"""
 <html>
@@ -1313,7 +1312,7 @@ def compose_reject_email(id, name, dept):
           <div class="content">
 
             <!-- START CENTERED WHITE CONTAINER -->
-            <span class="preheader">SAGA星光·第五期 - 录取通知</span>
+            <span class="preheader">SAGA星光·第七期 - 拒绝通知</span>
             <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="main">
 
               <!-- START MAIN CONTENT AREA -->
@@ -1408,10 +1407,10 @@ def send_reject_email_with_hr(to, subject, content) -> bool:
         sender = "human-resource@saga-xingguang.com"
         server = smtplib.SMTP('smtp.feishu.cn', 587)
         server.starttls()
-        server.login(sender, "PASSWORD_HERE")
+        server.login(sender, os.environ.get("SAGA_HR_EMAIL_PASSWORD", ""))
         
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = "【SAGA】2024-2025年度志愿者招募结果"
+        msg["Subject"] = "【SAGA】2026-2027年度志愿者招募结果"
         msg["From"] = sender
         msg["To"] = to
         msg["Reply-To"] = "human-resource@saga-xingguang.com"

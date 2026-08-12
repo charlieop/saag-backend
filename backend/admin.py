@@ -3,8 +3,27 @@ from .models import Applicant, ApplicationStatus, Interviewer, InterviewScore
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Q
+from datetime import datetime
 
 from unfold.admin import ModelAdmin, TabularInline
+
+
+class CreatedYearFilter(admin.SimpleListFilter):
+    title = "申请年份"
+    parameter_name = "created_year"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("2025", "2025年"),
+            ("2026", "2026年"),
+            ("2027", "2027年"),
+        )
+
+    def queryset(self, request, queryset):
+        year = self.value()
+        if year:
+            return queryset.filter(created_at__year=int(year))
+        return queryset
 
 # to make the user and group use Unfold's UserAdmin and GroupAdmin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
@@ -52,9 +71,11 @@ class AddInterviewScoreInline(TabularInline):
 
 # Register your models here.
 class ApplicantAdmin(ModelAdmin):
-    search_fields = ('name', 'school', 'major')
-    list_display = ('name', 'email', 'school', 'major', 'grade', 'first_choice', 'second_choice', 'id', 'src')
-    list_filter = ('grade', 'first_choice', 'second_choice', 'src')
+    search_fields = ('name', 'school', 'major', 'phone', 'email')
+    list_display = ('name', 'email', 'phone', 'wechat', 'school', 'major', 'grade', 'sex', 'region', 'first_choice', 'second_choice', 'third_choice', 'has_experience', 'experience_detail', 'self_intro', 'disposable_time', 'id', 'src', 'created_at')
+    list_filter = ('grade', 'first_choice', 'second_choice', 'third_choice', 'sex', 'has_experience', 'src', CreatedYearFilter)
+    fields = ['name', 'email', 'phone', 'wechat', 'school', 'major', 'grade', 'sex', 'region', ('first_choice', 'second_choice', 'third_choice'), ('has_experience', 'experience_detail'), 'self_intro', 'disposable_time', 'src', ('created_at', 'modified_at')]
+    readonly_fields = ['created_at', 'modified_at']
     
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -62,7 +83,7 @@ class ApplicantAdmin(ModelAdmin):
         if request.user.is_superuser:
             return qs
         query = Q()
-        depts = ("LAW", "IT", "LIA", "FIN",
+        depts = ("FAL", "IT", "LIA",
                  "PR", "HR", "CM", "TUT")
         
         for g in request.user.groups.all():
@@ -102,7 +123,7 @@ class ApplicationStatusAdmin(ModelAdmin):
         if request.user.is_superuser:
             return qs
         query = Q()
-        depts = ("LAW", "IT", "LIA", "FIN",
+        depts = ("FAL", "IT", "LIA",
                  "PR", "HR", "CM", "TUT")
         
         for g in request.user.groups.all():
